@@ -8,7 +8,7 @@ const products = [
     name: 'Premium Almonds',
     price: 1800,
     unit: '1 kg',
-    image: '/images/almonds.png', // From generated images
+    image: '/images/almonds.png',
     category: 'Nuts'
   },
   {
@@ -24,7 +24,7 @@ const products = [
     name: 'Walnuts',
     price: 1400,
     unit: '1 kg',
-    image: '/images/walnuts.png', // We fallback to css gradient or placeholder logic
+    image: '/images/walnuts.png',
     category: 'Nuts'
   },
   {
@@ -99,6 +99,199 @@ const orderModalOverlay = document.getElementById('order-modal-overlay');
 const closeOrderModal = document.getElementById('close-order-modal');
 const orderForm = document.getElementById('order-form');
 
+// ═══════════════════════════════════════════════════
+// PAGE LOADER
+// ═══════════════════════════════════════════════════
+const dismissLoader = () => {
+  const loader = document.getElementById('page-loader');
+  if (loader) {
+    loader.classList.add('loader-hidden');
+    setTimeout(() => {
+      loader.remove();
+      // Trigger hero animations after loader is gone
+      triggerHeroAnimations();
+    }, 600);
+  }
+};
+
+// Dismiss loader after everything is loaded or after a max timeout
+window.addEventListener('load', () => {
+  setTimeout(dismissLoader, 1800);
+});
+// Safety fallback
+setTimeout(dismissLoader, 4000);
+
+// ═══════════════════════════════════════════════════
+// HERO ANIMATIONS — triggered after loader
+// ═══════════════════════════════════════════════════
+const triggerHeroAnimations = () => {
+  // Animate stat counters
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const target = parseFloat(el.dataset.count);
+    const suffix = el.closest('.stat-item')?.querySelector('.text-sm')?.textContent || '';
+    const isHours = suffix.includes('Hours');
+    const isVarieties = suffix.includes('Varieties');
+    const isReviews = suffix.includes('Reviews');
+
+    let current = 0;
+    const increment = target / 40;
+    const interval = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        current = target;
+        clearInterval(interval);
+        // Add suffix text
+        if (isHours) el.textContent = '24/7';
+        else if (isVarieties) el.textContent = '100+';
+        else if (isReviews) el.textContent = '5.0★';
+      } else {
+        el.textContent = Math.floor(current);
+      }
+    }, 40);
+  });
+};
+
+// ═══════════════════════════════════════════════════
+// PARALLAX — Scroll-linked background movement
+// ═══════════════════════════════════════════════════
+let lastScrollY = 0;
+let ticking = false;
+
+const updateParallax = () => {
+  const scrollY = window.scrollY;
+  document.querySelectorAll('.parallax-bg').forEach(el => {
+    const speed = parseFloat(el.dataset.parallaxSpeed || 0.03);
+    const yOffset = scrollY * speed;
+    el.style.transform = `translateY(${yOffset}px)`;
+  });
+  ticking = false;
+};
+
+window.addEventListener('scroll', () => {
+  lastScrollY = window.scrollY;
+  if (!ticking) {
+    requestAnimationFrame(updateParallax);
+    ticking = true;
+  }
+}, { passive: true });
+
+// ═══════════════════════════════════════════════════
+// SCROLL REVEAL — IntersectionObserver
+// ═══════════════════════════════════════════════════
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('revealed');
+      // Don't unobserve so we can re-trigger if needed? 
+      // Actually unobserve for performance
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+const initScrollReveal = () => {
+  document.querySelectorAll('.reveal-up, .reveal-scale, .reveal-left, .reveal-right, .stagger-children').forEach(el => {
+    revealObserver.observe(el);
+  });
+};
+
+// ═══════════════════════════════════════════════════
+// 3D PRODUCT CARD TILT
+// ═══════════════════════════════════════════════════
+const initCardTilt = () => {
+  document.querySelectorAll('.product-card').forEach(card => {
+    const inner = card.querySelector('.product-card-inner');
+    const shine = card.querySelector('.product-card-shine');
+
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const rotateX = ((y - centerY) / centerY) * -6;
+      const rotateY = ((x - centerX) / centerX) * 6;
+
+      inner.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+      // Update shine position
+      if (shine) {
+        const shineX = (x / rect.width) * 100;
+        const shineY = (y / rect.height) * 100;
+        shine.style.setProperty('--shine-x', `${shineX}%`);
+        shine.style.setProperty('--shine-y', `${shineY}%`);
+      }
+    });
+
+    card.addEventListener('mouseleave', () => {
+      inner.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    });
+  });
+};
+
+// ═══════════════════════════════════════════════════
+// MAGNETIC BUTTON EFFECT
+// ═══════════════════════════════════════════════════
+const initMagneticButtons = () => {
+  document.querySelectorAll('.magnetic-btn').forEach(btn => {
+    btn.addEventListener('mousemove', (e) => {
+      const rect = btn.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+      btn.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
+    });
+
+    btn.addEventListener('mouseleave', () => {
+      btn.style.transform = 'translate(0, 0)';
+    });
+  });
+};
+
+// ═══════════════════════════════════════════════════
+// ACTIVE NAV LINK TRACKING
+// ═══════════════════════════════════════════════════
+const initActiveNavTracking = () => {
+  const sections = document.querySelectorAll('header[id], section[id], footer[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => {
+          link.classList.remove('active', 'text-brand-primary');
+          if (link.getAttribute('href') === `#${entry.target.id}`) {
+            link.classList.add('active', 'text-brand-primary');
+          }
+        });
+      }
+    });
+  }, { threshold: 0.3 });
+
+  sections.forEach(section => observer.observe(section));
+};
+
+// ═══════════════════════════════════════════════════
+// FLOATING PARTICLES (hero section)
+// ═══════════════════════════════════════════════════
+const initParticles = () => {
+  const hero = document.getElementById('home');
+  if (!hero) return;
+
+  for (let i = 0; i < 8; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    particle.style.left = `${Math.random() * 100}%`;
+    particle.style.top = `${60 + Math.random() * 40}%`;
+    particle.style.width = `${3 + Math.random() * 6}px`;
+    particle.style.height = particle.style.width;
+    particle.style.animationDuration = `${8 + Math.random() * 12}s`;
+    particle.style.animationDelay = `${Math.random() * 8}s`;
+    particle.style.opacity = `${0.1 + Math.random() * 0.2}`;
+    hero.appendChild(particle);
+  }
+};
+
 // --- Functions ---
 const formatCurrency = (amount) => {
   return amount.toLocaleString('en-US');
@@ -110,7 +303,14 @@ window.updatePriceDisplay = (productId) => {
   const weight = parseFloat(weightSelect.value);
   const priceDisplay = document.getElementById(`price-${productId}`);
   if (priceDisplay) {
-    priceDisplay.textContent = `NPR ${formatCurrency(product.price * weight)}`;
+    // Animate price change
+    priceDisplay.style.transform = 'scale(0.8)';
+    priceDisplay.style.opacity = '0.5';
+    setTimeout(() => {
+      priceDisplay.textContent = `NPR ${formatCurrency(product.price * weight)}`;
+      priceDisplay.style.transform = 'scale(1)';
+      priceDisplay.style.opacity = '1';
+    }, 150);
   }
 };
 
@@ -119,29 +319,31 @@ let showingAllProducts = false;
 const renderProducts = () => {
   const displayProducts = showingAllProducts ? products : products.slice(0, 4);
   productGrid.innerHTML = displayProducts.map(product => {
-    // Fallback if image path is not resolving or empty
     const imgSrc = product.image ? product.image : `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F8F5F1'/></svg>`;
     return `
-    <div class="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col">
-      <div class="relative h-56 bg-brand-light overflow-hidden flex items-center justify-center p-4">
-        ${product.image ? `<img src="${imgSrc}" onerror="this.style.display='none'" class="object-cover w-full h-full rounded-xl mix-blend-multiply transition-transform duration-500 group-hover:scale-110" alt="${product.name}">` : `<i data-lucide="nut" class="w-16 h-16 text-brand-primary/20"></i>`}
-        <div class="absolute top-4 left-4 bg-white/90 backdrop-blur text-xs font-bold px-2 py-1 rounded-md text-brand-dark uppercase tracking-wider">
-          ${product.category}
+    <div class="product-card">
+      <div class="product-card-inner bg-white rounded-2xl border border-gray-100 overflow-hidden flex flex-col relative">
+        <div class="product-card-shine"></div>
+        <div class="relative h-56 bg-brand-light overflow-hidden flex items-center justify-center p-4">
+          ${product.image ? `<img src="${imgSrc}" onerror="this.style.display='none'" class="product-img object-cover w-full h-full rounded-xl mix-blend-multiply" alt="${product.name}">` : `<i data-lucide="nut" class="w-16 h-16 text-brand-primary/20"></i>`}
+          <div class="category-badge absolute top-4 left-4 bg-white/90 backdrop-blur text-xs font-bold px-2 py-1 rounded-md text-brand-dark uppercase tracking-wider">
+            ${product.category}
+          </div>
         </div>
-      </div>
-      <div class="p-6 flex flex-col flex-1">
-        <h3 class="font-serif font-bold text-lg text-brand-dark mb-1 leading-tight line-clamp-2">${product.name}</h3>
-        <div class="mb-4 mt-1">
-          <select id="weight-${product.id}" onchange="updatePriceDisplay(${product.id})" class="text-sm border border-gray-200 rounded-md py-1 px-2 focus:outline-none focus:border-brand-primary bg-gray-50 text-brand-dark cursor-pointer hover:bg-gray-100 transition-colors">
-            <option value="1">1 kg</option>
-            <option value="0.5">0.5 kg</option>
-          </select>
-        </div>
-        <div class="mt-auto flex items-center justify-between">
-          <span id="price-${product.id}" class="font-bold text-lg">NPR ${formatCurrency(product.price)}</span>
-          <button onclick="addToCart(${product.id})" class="w-10 h-10 rounded-full bg-brand-light text-brand-dark flex items-center justify-center hover:bg-brand-primary hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2">
-            <i data-lucide="plus" class="w-5 h-5 pointer-events-none"></i>
-          </button>
+        <div class="p-6 flex flex-col flex-1">
+          <h3 class="font-serif font-bold text-lg text-brand-dark mb-1 leading-tight line-clamp-2">${product.name}</h3>
+          <div class="mb-4 mt-1">
+            <select id="weight-${product.id}" onchange="updatePriceDisplay(${product.id})" class="weight-select text-sm border border-gray-200 rounded-md py-1 px-2 focus:outline-none focus:border-brand-primary bg-gray-50 text-brand-dark cursor-pointer hover:bg-gray-100">
+              <option value="1">1 kg</option>
+              <option value="0.5">0.5 kg</option>
+            </select>
+          </div>
+          <div class="mt-auto flex items-center justify-between">
+            <span id="price-${product.id}" class="font-bold text-lg transition-all duration-200">NPR ${formatCurrency(product.price)}</span>
+            <button onclick="addToCart(${product.id}, event)" class="add-btn w-10 h-10 rounded-full bg-brand-light text-brand-dark flex items-center justify-center hover:bg-brand-primary hover:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2">
+              <i data-lucide="plus" class="w-5 h-5 pointer-events-none"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -149,6 +351,18 @@ const renderProducts = () => {
 
   if (window.lucide) {
     window.lucide.createIcons();
+  }
+
+  // Re-initialize card tilt and magnetic buttons for new elements
+  initCardTilt();
+
+  // Re-observe the product grid for stagger animation
+  const grid = document.getElementById('product-grid');
+  if (grid) {
+    // Reset children visibility for stagger animation
+    grid.classList.remove('revealed');
+    void grid.offsetWidth; // force reflow
+    revealObserver.observe(grid);
   }
 };
 
@@ -173,8 +387,10 @@ const showToast = (message) => {
   }, 3000);
 };
 
-// Expose to window for inline onclick handlers
-window.addToCart = (productId) => {
+// ═══════════════════════════════════════════════════
+// ADD TO CART — with ripple + fly-to-cart animation
+// ═══════════════════════════════════════════════════
+window.addToCart = (productId, event) => {
   const product = products.find(p => p.id === productId);
   const weightSelect = document.getElementById(`weight-${productId}`);
   const weight = weightSelect ? parseFloat(weightSelect.value) : 1;
@@ -190,8 +406,59 @@ window.addToCart = (productId) => {
     cart.push({ cartItemId, product, quantity: 1, weight, unitLabel, price });
   }
 
+  // Ripple effect on the add button
+  if (event) {
+    const btn = event.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.left = `${event.clientX - rect.left}px`;
+    ripple.style.top = `${event.clientY - rect.top}px`;
+    ripple.style.width = ripple.style.height = '20px';
+    btn.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 700);
+
+    // Fly-to-cart animation
+    createFlyElement(btn, product);
+  }
+
+  // Pulse the cart badge
+  cartCount.classList.add('cart-badge-pulse');
+  setTimeout(() => cartCount.classList.remove('cart-badge-pulse'), 600);
+
   updateCartUI();
   showToast(`${product.name} (${unitLabel}) added to cart`);
+};
+
+// Create a small flying element from button to cart icon
+const createFlyElement = (sourceBtn, product) => {
+  const cartIcon = document.getElementById('cart-toggle');
+  if (!cartIcon) return;
+
+  const sourceRect = sourceBtn.getBoundingClientRect();
+  const targetRect = cartIcon.getBoundingClientRect();
+
+  const flyEl = document.createElement('div');
+  flyEl.className = 'fly-to-cart';
+  flyEl.style.left = `${sourceRect.left}px`;
+  flyEl.style.top = `${sourceRect.top}px`;
+  flyEl.style.width = '24px';
+  flyEl.style.height = '24px';
+  flyEl.style.borderRadius = '50%';
+  flyEl.style.background = '#C97A34';
+
+  document.body.appendChild(flyEl);
+
+  // Animate to cart position
+  requestAnimationFrame(() => {
+    flyEl.style.transition = 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1)';
+    flyEl.style.left = `${targetRect.left + targetRect.width / 2 - 12}px`;
+    flyEl.style.top = `${targetRect.top + targetRect.height / 2 - 12}px`;
+    flyEl.style.transform = 'scale(0.2)';
+    flyEl.style.opacity = '0';
+  });
+
+  setTimeout(() => flyEl.remove(), 800);
 };
 
 window.updateQuantity = (cartItemId, change) => {
@@ -235,7 +502,7 @@ const updateCartUI = () => {
       <div class="h-full flex flex-col items-center justify-center text-brand-dark/50 gap-4 opacity-70">
         <i data-lucide="shopping-cart" class="w-16 h-16 mb-2"></i>
         <p>Your cart is empty.</p>
-        <button onclick="document.getElementById('cart-close').click(); document.getElementById('shop').scrollIntoView({behavior: 'smooth'})" class="mt-4 px-6 py-2 bg-brand-primary text-white rounded-full font-medium hover:bg-brand-primaryDark transition-colors">Start Shopping</button>
+        <button onclick="document.getElementById('cart-close').click(); document.getElementById('shop').scrollIntoView({behavior: 'smooth'})" class="mt-4 px-6 py-2 bg-brand-primary text-white rounded-full font-medium hover:bg-brand-primaryDark transition-colors magnetic-btn">Start Shopping</button>
       </div>
     `;
     checkoutBtn.disabled = true;
@@ -393,7 +660,7 @@ orderForm.addEventListener('submit', async (e) => {
         </div>
         <h3 class="font-serif text-2xl font-bold mb-2">Order Confirmed!</h3>
         <p class="text-gray-500 text-sm mb-6">Thank you, ${name.split(' ')[0]}. We will contact you shortly to confirm delivery.</p>
-        <button id="close-success" class="px-8 py-3 w-full bg-brand-dark text-white rounded-full font-medium hover:bg-brand-dark/90 transition-colors">Continue Shopping</button>
+        <button id="close-success" class="px-8 py-3 w-full bg-brand-dark text-white rounded-full font-medium hover:bg-brand-dark/90 transition-colors magnetic-btn">Continue Shopping</button>
       `;
       document.body.appendChild(successToast);
 
@@ -461,4 +728,8 @@ document.head.appendChild(style);
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
   renderProducts();
+  initScrollReveal();
+  initMagneticButtons();
+  initActiveNavTracking();
+  initParticles();
 });
